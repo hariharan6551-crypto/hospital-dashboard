@@ -9,14 +9,21 @@ from datetime import datetime
 st.set_page_config(page_title="🏥 Hospital Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # ---------------- DB CONNECTION ----------------
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",         
-    password="",         
-    database="hari"      
-)
+try:
+    conn = mysql.connector.connect(
+        host="sql111.infinityfree.com",            # InfinityFree host
+        user="if0_39806258",                      # InfinityFree username
+        password="YOUR_VPANEL_PASSWORD",          # InfinityFree vPanel password
+        database="if0_39806258_hospital_db",      # InfinityFree DB name
+        port=3306
+    )
+    st.sidebar.success("✅ Database connected successfully!")
+except mysql.connector.Error as e:
+    st.error(f"❌ Database connection failed: {e}")
+    st.stop()
 
-query = "SELECT * FROM hospitaldata;"
+# ---------------- FETCH DATA ----------------
+query = "SELECT * FROM hospitaldata;"  # Ensure this table exists in phpMyAdmin
 df = pd.read_sql(query, conn)
 
 # ---------------- SIDEBAR ----------------
@@ -56,7 +63,6 @@ with col1:
         markers=True,
         title="📈 Age Trend by Admission Date"
     )
-    fig1.update_layout(transition_duration=500)
     st.plotly_chart(fig1, use_container_width=True)
 
 # Chart 2: Scatter Timeline with Play Slider
@@ -71,7 +77,6 @@ with col2:
         animation_group="Patient_ID",
         title="🕒 Admissions Over Time (Animated)"
     )
-    fig2.update_layout(transition_duration=500)
     st.plotly_chart(fig2, use_container_width=True)
 
 # ---------------- PIE + SUNBURST ----------------
