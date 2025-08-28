@@ -9,18 +9,14 @@ from datetime import datetime
 st.set_page_config(page_title="🏥 Hospital Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # ---------------- DB CONNECTION ----------------
-conn = mysql.connector.connect(
-    host="sql111.infinityfree.com",
-    user="if0_39806258",
-    password="YOUR_VPANEL_PASSWORD",  # Use vPanel password
-    database="if0_39806258_hospital_db",
-    port=3306
-)
-
+# Database connection
+conn = None
+try:
+    conn = sqlite3.connect("hospital.db")
     st.sidebar.success("✅ Database connected successfully!")
-except mysql.connector.Error as e:
-    st.error(f"❌ Database connection failed: {e}")
-    st.stop()
+except Exception as e:
+    st.sidebar.error(f"❌ Database connection failed: {e}")
+
 
 # ---------------- FETCH DATA ----------------
 query = "SELECT * FROM hospitaldata;"  # Ensure this table exists in phpMyAdmin
