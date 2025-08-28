@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
+import pymysql
 import plotly.express as px
 import time
 from datetime import datetime
@@ -9,18 +9,31 @@ from datetime import datetime
 st.set_page_config(page_title="🏥 Hospital Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # ---------------- DB CONNECTION ----------------
-# Database connection
-conn = None
-try:
-    conn = sqlite3.connect("hospital.db")
-    st.sidebar.success("✅ Database connected successfully!")
-except Exception as e:
-    st.sidebar.error(f"❌ Database connection failed: {e}")
+def get_connection():
+    try:
+        conn = pymysql.connect(
+            host="sql111.infinityfree.com",  # InfinityFree host
+            user="if0_39806258",             # Your InfinityFree DB username
+            password="YOUR_PASSWORD",       # Replace with your InfinityFree DB password
+            database="if0_39806258_hospital_db",  # Your InfinityFree DB name
+            port=3306
+        )
+        st.sidebar.success("✅ Database connected successfully!")
+        return conn
+    except Exception as e:
+        st.sidebar.error(f"❌ Database connection failed: {e}")
+        return None
 
+conn = get_connection()
 
 # ---------------- FETCH DATA ----------------
-query = "SELECT * FROM hospitaldata;"  # Ensure this table exists in phpMyAdmin
-df = pd.read_sql(query, conn)
+if conn:
+    query = "SELECT * FROM hospitaldata;"  # Make sure this table exists
+    df = pd.read_sql(query, conn)
+    conn.close()
+else:
+    st.error("Database connection failed. Please check your credentials.")
+    st.stop()
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("⚙️ Controls")
@@ -49,7 +62,6 @@ st.markdown("---")
 # ---------------- CHARTS ----------------
 col1, col2 = st.columns(2)
 
-# Chart 1: Line chart - Age Trend by Admission Date
 with col1:
     fig1 = px.line(
         df_filtered,
@@ -61,7 +73,6 @@ with col1:
     )
     st.plotly_chart(fig1, use_container_width=True)
 
-# Chart 2: Scatter Timeline with Play Slider
 with col2:
     fig2 = px.scatter(
         df_filtered,
@@ -75,35 +86,9 @@ with col2:
     )
     st.plotly_chart(fig2, use_container_width=True)
 
-# ---------------- PIE + SUNBURST ----------------
 col3, col4 = st.columns(2)
 
-# Pie Chart - Patient Distribution by Department
 with col3:
     fig3 = px.pie(
         df_filtered,
         names="Department",
-        values="Age",
-        hole=0.4,
-        title="🧩 Patient Distribution by Department"
-    )
-    fig3.update_traces(pull=[0.05]*len(df_filtered["Department"].unique()))
-    st.plotly_chart(fig3, use_container_width=True)
-
-# Sunburst Chart - Department → Gender
-with col4:
-    fig4 = px.sunburst(
-        df_filtered,
-        path=["Department", "Gender"],
-        values="Age",
-        title="🌞 Department → Gender Breakdown"
-    )
-    st.plotly_chart(fig4, use_container_width=True)
-
-# ---------------- LAST UPDATED + LIVE INDICATOR ----------------
-last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-live_icon = "🔴" if int(datetime.now().second) % 2 == 0 else "⚪"
-
-st.markdown(f"### {live_icon} LIVE | ⏰ Last Updated: {last_update}")
-st.sidebar.markdown(f"{live_icon} **LIVE**")
-st.sidebar.markdown(f"⏰ **Last Updated:** {last_update}")
